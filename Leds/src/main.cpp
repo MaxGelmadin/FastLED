@@ -19,10 +19,11 @@ using namespace std;
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
-
-const char *SSID = "YOUR_WIFI_NAME";
-const char *WiFiPassword = "WIFI_PASS";
+TaskHandle_t Task1, Task2;
+const char *SSID = "maxim";
+const char *WiFiPassword = "maxsofiron";
 WiFiServer server(80);
+
 
 void ConnectToWiFi()
 {
@@ -82,22 +83,17 @@ AbstractDraw* effects[] = {
     &fireEffect6
 };
 
-
-void setup()
-{
-    Serial.begin(9600);
-    ConnectToWiFi();
-    pinMode(LED_PIN, OUTPUT);
-    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    FastLED.setBrightness(BRIGHTNESS);
-    FastLED.setMaxPowerInMilliWatts(900);
+void Task1code(void * pvParameters) {
+  for(;;) {
+        if (current_effect != nullptr)
+            current_effect->Draw();
+  }
 }
 
-void loop()
-{
-    if (current_effect != nullptr)
-        current_effect->Draw();
-    // -------------------------------------------------
+void Task2code(void * pvParameters) {
+  for(;;) 
+  {
+        // -------------------------------------------------
     WiFiClient client = server.available(); // listen for incoming clients
 
     if (client)
@@ -169,4 +165,116 @@ void loop()
         client.stop();
         //Serial.println("Client Disconnected.");
     }
+  }
+
+}
+
+void setup()
+{
+    Serial.begin(9600);
+    ConnectToWiFi();
+    pinMode(LED_PIN, OUTPUT);
+    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+    FastLED.setBrightness(BRIGHTNESS);
+    FastLED.setMaxPowerInMilliWatts(900);
+
+    xTaskCreatePinnedToCore(
+      Task1code, /* Function to implement the task */
+      "Task1", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &Task1,  /* Task handle. */
+      1); /* Core where the task should run */
+      
+      delay(500);
+
+      xTaskCreatePinnedToCore(
+      Task2code, /* Function to implement the task */
+      "Task2", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      0,  /* Priority of the task */
+      &Task2,  /* Task handle. */
+      0); /* Core where the task should run */
+      
+      delay(500);
+}
+
+
+
+void loop()
+{
+    // // -------------------------------------------------
+    // WiFiClient client = server.available(); // listen for incoming clients
+
+    // if (client)
+    // {                                  // if you get a client,
+    //     //Serial.println("New Client."); // print a message out the serial port
+    //     std::string currentLine("");       // make a String to hold incoming data from the client
+    //     while (client.connected())
+    //     { // loop while the client's connected
+    //         if (client.available())
+    //         {                           // if there's bytes to read from the client,
+    //             char c = client.read(); // read a byte, then
+    //             Serial.write(c);        // print it out the serial monitor
+    //             if (c == '\n')
+    //             { // if the byte is a newline character
+
+    //                 // if the current line is blank, you got two newline characters in a row.
+    //                 // that's the end of the client HTTP request, so send a response:
+    //                 if (currentLine.length() == 0)
+    //                 {
+    //                     // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+    //                     // and a content-type so the client knows what's coming, then a blank line:
+    //                     client.println("HTTP/1.1 200 OK");
+    //                     client.println("Content-type:text/html");
+    //                     client.println();
+
+    //                     // the content of the HTTP response follows the header:
+    //                     client.print("Click <a href=\"/A\">here</a> to turn `Marquee` on.<br>");
+    //                     client.print("Click <a href=\"/B\">here</a> to turn `Stars` on.<br>");
+    //                     //client.print("Click <a href=\"/C\">here</a> to turn `Comet` on.<br>");
+    //                     client.print("Click <a href=\"/C\">here</a> to turn `Clashing Comets` on.<br>");
+    //                     client.print("Click <a href=\"/D\">here</a> to turn `Bouncing Balls` on.<br>");
+    //                     client.print("Click <a href=\"/E\">here</a> to turn `Fire - Middle -> Outwards` on.<br>");
+    //                     client.print("Click <a href=\"/F\">here</a> to turn `Fire - Inwards -> Middle` on.<br>");
+    //                     client.print("Click <a href=\"/G\">here</a> to turn `Fire - Zero -> Outwards` on.<br>");
+    //                     client.print("Click <a href=\"/H\">here</a> to turn `Fire - End -> Inwards` on.<br>");
+    //                     client.print("Click <a href=\"/I\">here</a> to turn `Fire - Zero -> Outwards [Stronger]` on.<br>");
+    //                     client.print("Click <a href=\"/J\">here</a> to turn `Fire - Inwrds -> Middle [Custom]` on.<br>");
+    //                     client.print("Click <a href=\"/Z\">here</a> to deep sleep ESP32.<br>");
+
+    //                     // The HTTP response ends with another blank line:
+    //                     client.println();
+    //                     break;
+    //                 }
+    //                 else
+    //                 { // if you got a newline, then clear currentLine:
+    //                     currentLine = "";
+    //                 }
+    //             }
+    //             else if (c != '\r')
+    //             {                     // if you got anything else but a carriage return character,
+    //                 currentLine += c; // add it to the end of the currentLine
+    //             }
+    //             if (regex_match(currentLine, str_reg))
+    //             {
+    //                 char temp_c = currentLine[currentLine.length() - 1];
+    //                 if (temp_c == 'Z')                                      // Send chip to sleep.
+    //                 {
+    //                     FastLED.clear(true);
+    //                     esp_deep_sleep_start();
+    //                 }
+    //                 else                                                    // Select the chosen effect.
+    //                 {
+    //                     current_effect = effects[temp_c - 'A'];
+    //                 }
+    //             }
+    //         }
+    //     // close the connection:
+    //     }
+    //     client.stop();
+    //     //Serial.println("Client Disconnected.");
+    // }
 }
