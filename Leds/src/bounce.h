@@ -5,10 +5,9 @@
 #include <sys/time.h>
 #define NUM_LEDS 120
 
-//extern CRGB leds[];
-
+extern CRGB leds[];
+extern AbstractDraw* current_effect;
 using namespace std;
-
 #define ARRAY_SIZE(x) (sizeof(x) / (sizeof(x[0])))
 
 static const CRGB colors[] =
@@ -88,6 +87,7 @@ class BouncingBalls : public AbstractDraw
 
                         Height[i] = 0.5 * Gravity * pow(TimeSinceLastBounce, 2.0) + BallSpeed[i] * TimeSinceLastBounce;
 
+
                         if (Height[i] < 0)
                         {
                             Height[i] = 0;
@@ -102,16 +102,15 @@ class BouncingBalls : public AbstractDraw
                         size_t position = (size_t) (Height[i] * (_length - 1) / StartingHeight);
 
                         leds[position] += ballColors[i];
-                        leds[position + 1] += ballColors[i];
+                        leds[position - 1] += ballColors[i];
 
                         if (_mirrored)
                         {
                             leds[_length - position - 1] += ballColors[i];
-                            leds[_length - position] += ballColors[i];
+                            leds[_length - position - 2] += ballColors[i];
                         }
                     }
                     FastLED.show();
-                    delay(30);
+                    delay(15);
                 }
 };
-
