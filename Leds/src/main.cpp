@@ -61,8 +61,7 @@ const char *WiFiPassword = "maxsofiron";
 //WiFiServer server(80);
 AsyncWebServer server(80);
 AsyncWebSocket ws1("/ws");
-bool ledState = 0;
-const int ledPin = 2;
+char* nameOfCurrentEffect = nullptr;
 
 
 //--------------------------------------------
@@ -143,19 +142,10 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
   <div class="content">
     <div class="card">
-      <h2>Output - GPIO 2</h2>
-      <p class="state">state: <span id="state">%STATE%</span></p>
-      <p><button id="button" class="button">Toggle</button></p>
-      // THIS IS MINE, TRYING TO LEARN THIS ON THE FLY
-      <h2>Comet Effect</h2>
-      <p class="state">state: <span id="state">%STATE%</span></p>
-      <p><button id="button1" class="button">Toggle</button1></p>
-
-      <h2>Bouncing Balls</h2>
-      <p class="state">state: <span id="state">%STATE%</span></p>
-      <p><button id="button2" class="button">Toggle</button2></p>
+      <p class="state">Current Effect: <span id="state: ">%STATE%</span></p>
+      <p><button id="button1" class="button">Comet Effect</button1></p>
+      <p><button id="button2" class="button">Bouncing Balls</button2></p>
     </div>
-    // UNTIL HERE
   </div>
 <script>
   var gateway = `ws://${window.location.hostname}/ws`;
@@ -176,26 +166,15 @@ const char index_html[] PROGMEM = R"rawliteral(
     setTimeout(initWebSocket, 2000);
   }
   function onMessage(event) {
-    var state;
-    if (event.data == "1"){
-      state = "ON";
-    }
-    else{
-      state = "OFF";
-    }
-    document.getElementById('state').innerHTML = state;
+    document.getElementById('currentEffect').innerHTML = event.data;
   }
   function onLoad(event) {
     initWebSocket();
     initButtons();
   }
   function initButtons() {
-    document.getElementById('button').addEventListener('click', toggle);
     document.getElementById('button1').addEventListener('click', comet);
     document.getElementById('button2').addEventListener('click', bouncingBalls);
-  }
-  function toggle(){
-    websocket.send('toggle');
   }
   function comet(){
     websocket.send('comet');
@@ -208,27 +187,25 @@ const char index_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 void notifyClients() {
-  ws1.textAll(String(ledState));
+  ws1.textAll(nameOfCurrentEffect);
 }
 
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
     data[len] = 0;
-    if (strcmp((char*)data, "toggle") == 0) {
-      ledState = !ledState;
-      notifyClients();
-    }
-    else if (strcmp ((char*)data, "comet") == 0)
+    if (strcmp ((char*)data, "comet") == 0)
     {
         Serial.println("Client clicked on 'comet' effect");
         current_effect = effects[0];
+        nameOfCurrentEffect = "Comet";
         notifyClients();
     }
     else if (strcmp ((char*)data, "bouncing balls") == 0)
     {
         Serial.println("Client clicked on 'Bouncing Balls' effect");
         current_effect = effects[3];
+        nameOfCurrentEffect = "Bouncing Balls";
         notifyClients();
     }
   }
@@ -260,12 +237,7 @@ void initWebSocket() {
 String processor(const String& var){
   Serial.println(var);
   if(var == "STATE"){
-    if (ledState){
-      return "ON";
-    }
-    else{
-      return "OFF";
-    }
+    return nameOfCurrentEffect;
   }
 }
 
@@ -297,118 +269,35 @@ void ConnectToWiFi()
     server.begin();
 }
 
-
-// void Task1code(void * pvParameters) {
-//   for(;;) {
-//     Serial.printf("Inside Task1\n");
-//     if (current_effect != nullptr)
-//         current_effect->Draw();
-//     //vTaskDelay(1000 / portTICK_PERIOD_MS);
-//   }
-// }
-
-// void Task2code(void * pvParameters) {
-//   for(;;) 
-//   {
-//       Serial.printf("Inside Task2\n");
-//         // -------------------------------------------------
-//     WiFiClient client = server.available(); // listen for incoming clients
-
-//     if (client)
-//     {                                  // if you get a client,
-//         Serial.println("New Client."); // print a message out the serial port
-//         string currentLine("");       // make a String to hold incoming data from the client
-//         while (client.connected())
-//         { // loop while the client's connected
-//             if (client.available())
-//             {                           // if there's bytes to read from the client,
-//                 char c = client.read(); // read a byte, then
-//                 Serial.write(c);        // print it out the serial monitor
-//                 if (c == '\n')
-//                 { // if the byte is a newline character
-
-//                     // if the current line is blank, you got two newline characters in a row.
-//                     // that's the end of the client HTTP request, so send a response:
-//                     if (currentLine.length() == 0)
-//                     {
-//                         // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-//                         // and a content-type so the client knows what's coming, then a blank line:
-//                         client.println("HTTP/1.1 200 OK");
-//                         client.println("Content-type:text/html");
-//                         client.println();
-
-//                         // the content of the HTTP response follows the header:
-//                         client.print("Click <a href=\"/A\">here</a> to turn `Marquee` on.<br>");
-//                         client.print("Click <a href=\"/B\">here</a> to turn `Stars` on.<br>");
-//                         //client.print("Click <a href=\"/C\">here</a> to turn `Comet` on.<br>");
-//                         client.print("Click <a href=\"/C\">here</a> to turn `Clashing Comets` on.<br>");
-//                         client.print("Click <a href=\"/D\">here</a> to turn `Bouncing Balls` on.<br>");
-//                         client.print("Click <a href=\"/E\">here</a> to turn `Fire - Middle -> Outwards` on.<br>");
-//                         client.print("Click <a href=\"/F\">here</a> to turn `Fire - Inwards -> Middle` on.<br>");
-//                         client.print("Click <a href=\"/G\">here</a> to turn `Fire - Zero -> Outwards` on.<br>");
-//                         client.print("Click <a href=\"/H\">here</a> to turn `Fire - End -> Inwards` on.<br>");
-//                         client.print("Click <a href=\"/I\">here</a> to turn `Fire - Zero -> Outwards [Stronger]` on.<br>");
-//                         client.print("Click <a href=\"/J\">here</a> to turn `Fire - Inwrds -> Middle [Custom]` on.<br>");
-//                         client.print("Click <a href=\"/Z\">here</a> to deep sleep ESP32.<br>");
-
-//                         // The HTTP response ends with another blank line:
-//                         client.println();
-//                         break;
-//                     }
-//                     else
-//                     { // if you got a newline, then clear currentLine:
-//                         currentLine = "";
-//                     }
-//                 }
-//                 else if (c != '\r')
-//                 {                     // if you got anything else but a carriage return character,
-//                     currentLine += c; // add it to the end of the currentLine
-//                 }
-//                 if (regex_match(currentLine, str_reg))
-//                 {
-//                     char temp_c = currentLine[currentLine.length() - 1];
-//                     Serial.println(temp_c);
-//                     if (temp_c == 'Z')                                      // Send chip to sleep.
-//                     {
-//                         FastLED.clear(true);
-//                         esp_deep_sleep_start();
-//                     }
-//                     else                                                    // Select the chosen effect.
-//                     {
-//                         current_effect = effects[temp_c - 'A'];
-//                     }
-//                 }
-//             }
-//         // close the connection:
-//         }
-//         client.stop();
-//         Serial.println("Client Disconnected.");
-//     }
-//     vTaskDelay(1000 / portTICK_PERIOD_MS);
-//   }
-
-// }
+void Task1code(void* params)
+{
+  for (;;)
+  {
+    ws1.cleanupClients();
+    if (current_effect)
+        current_effect->Draw();
+  }
+}
 
 void setup()
 {
     Serial.begin(9600);
     ConnectToWiFi();
     initWebSocket();
-    pinMode(ledPin, OUTPUT);
     pinMode(LED_PIN, OUTPUT);
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     FastLED.setMaxPowerInMilliWatts(900);
-    // xTaskCreatePinnedToCore(
-    //   Task1code, /* Function to implement the task */
-    //   "Task1", /* Name of the task */
-    //   10000,  /* Stack size in words */
-    //   NULL,  /* Task input parameter */
-    //   2,  /* Priority of the task */
-    //   &Task1,  /* Task handle. */
-    //   1); /* Core where the task should run */
+    xTaskCreatePinnedToCore(
+      Task1code, /* Function to implement the task */
+      "Task1", /* Name of the task */
+      10000,  /* Stack size in words */
+      NULL,  /* Task input parameter */
+      2,  /* Priority of the task */
+      &Task1,  /* Task handle. */
+      1); /* Core where the task should run */
       
-    // delay(500);
+    delay(500);
 
     //   xTaskCreatePinnedToCore(
     //   Task2code, /* Function to implement the task */
@@ -425,8 +314,8 @@ void setup()
 
 
 void loop() { 
-    ws1.cleanupClients();
-    if (current_effect)
-        current_effect->Draw();
+    // ws1.cleanupClients();
+    // if (current_effect)
+    //     current_effect->Draw();
     
 }
