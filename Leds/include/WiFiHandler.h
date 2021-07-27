@@ -6,7 +6,7 @@
 #include "comet.h"
 #include "bounce.h"
 #include "fire.h"
-#include "Marquee.h"
+#include "marquee.h"
 #include "WiFi.h"
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>

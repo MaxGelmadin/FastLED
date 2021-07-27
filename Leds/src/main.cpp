@@ -1,8 +1,7 @@
 #include <Arduino.h>
 #define FASTLED_INTERNAL
 #include <FastLED.h>
-#include <string.h>
-#include "../include/WiFiHandaling.h"
+#include "../include/WiFiHandler.h"
 
 #define LED_PIN 5
 #define NUM_LEDS 120
