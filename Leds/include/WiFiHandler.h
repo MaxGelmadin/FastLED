@@ -210,10 +210,10 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
       data[len] = 0;
-      for (int i = 0; i < len; i++) {
-        Serial.printf("%c", data[i]);
-      }
-      Serial.println();
+      // for (int i = 0; i < len; i++) {
+      //   Serial.printf("%c", data[i]);
+      // }
+      // Serial.println();
       if (strncmp((char*) data, "brightness", 10) == 0)
       {
         uint8_t brightness = uint8_t (atoi(((char*) (data + 10))));
@@ -225,14 +225,12 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
       else if (strncmp((char*) data, "static_color", 12) == 0)
       {
         g_CurrentEffect = nullptr;
-        //FastLED.clear(true);
+        g_NameOfCurrentEffect = "Static color";
+        vTaskSuspend(g_task1);
         int color = strtol((char*) (data + 12), NULL, 16);
-        //int color = atoi((char*) (data + 12));            // 0x__ __ __
-        Serial.printf("color - %x\n", color);
         uint8_t r = (color & (0x00FF0000)) >> 16;
         uint8_t g = (color & (0x0000FF00)) >> 8;
         uint8_t b = (color & (0x000000FF)) >> 0;
-        Serial.printf("r - %x, g - %x, b - %x\n", r, g, b);
         fill_solid(g_Leds, NUM_LEDS, {r, g, b});
         FastLED.show();
       }
@@ -240,15 +238,16 @@ void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
       {
         g_CurrentEffect = nullptr;
         FastLED.clear(true);
-        g_NameOfCurrentEffect = "Turned Off";
+        vTaskDelete(g_task1);
         esp_deep_sleep_start();
       }
       else
       {
-      int temp = atoi((char*) data);
-      g_CurrentEffect = g_Effects[temp].effect;
-      g_NameOfCurrentEffect = g_Effects[temp].name;
-      notifyClients();
+        int temp = atoi((char*) data);
+        g_CurrentEffect = g_Effects[temp].effect;
+        g_NameOfCurrentEffect = g_Effects[temp].name;
+        vTaskResume(g_task1);
+        notifyClients();
      }
    }
 }

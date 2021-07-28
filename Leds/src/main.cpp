@@ -5,7 +5,7 @@
 
 #define LED_PIN 5
 #define NUM_LEDS 120
-#define BRIGHTNESS 255
+#define BRIGHTNESS 100
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
@@ -14,9 +14,12 @@ void task1code(void* params)
 {
   for (;;)
   {
+    Serial.println("Inside task1");
     ws1.cleanupClients();
     if (g_CurrentEffect)
         g_CurrentEffect->Draw();
+    else
+      vTaskSuspend(nullptr);
   }
 }
 
@@ -39,4 +42,4 @@ void setup()
       1); /* Core where the task should run */
 }
 
-void loop() { }
+void loop() {}
