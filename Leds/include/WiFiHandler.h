@@ -119,6 +119,10 @@ const char index_html[] PROGMEM = R"rawliteral(
      box-shadow: 2 2px #CDCDCD;
      transform: translateY(2px);
    }
+  .small-btn {
+    width: 50px;
+    height: 21.33px;
+  }
    .state {
      font-size: 1.5rem;
      color:#8c8c8c;
@@ -133,6 +137,16 @@ const char index_html[] PROGMEM = R"rawliteral(
   <div class="topnav">
     <h1>ESP WebSocket Server</h1>
   </div>
+   <table>
+      <tr>
+        <th>Brightness: <input name="brightness" type="text" maxlength="512" id="brightness" class="searchField"/></th>
+        <th><button id="button98" class="small-btn">Apply</button98></th>
+      </tr>
+      <tr>
+        <th>Static Color: <input name="static_color" type="text" maxlength="512" id="static_color" class="searchField"/></th>
+        <th><button id="button97" class="small-btn">Apply</button97></th>
+      </tr>
+    </table>
   <div class="content">
     <div class="card">
       <p class="state">Current Effect: <span id="state: ">%STATE%</span></p>
@@ -181,6 +195,8 @@ const char index_html[] PROGMEM = R"rawliteral(
       document.getElementById(`button${i}`).addEventListener('click', function() { websocket.send(i.toString()) });
     }
     document.getElementById('button99').addEventListener('click', function() { websocket.send("Z") });
+    document.getElementById('button98').addEventListener('click', function() { websocket.send(`brightness${brightness.value}`) });
+    document.getElementById('button97').addEventListener('click', function() { websocket.send(`static_color${static_color.value}`) });
   }
 </script>
 </body>
@@ -193,22 +209,48 @@ void notifyClients() {
 void handleWebSocketMessage(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
-    data[len] = 0;
-    if (strcmp((char*) data, "Z") == 0)
-    {
-      FastLED.clear(true);
-      esp_deep_sleep_start();
-      g_CurrentEffect = nullptr;
-      g_NameOfCurrentEffect = "Turned Off";
-    }
-    else
-    {
-    int temp = atoi((char*) data);
-    g_CurrentEffect = g_Effects[temp].effect;
-    g_NameOfCurrentEffect = g_Effects[temp].name;
-    notifyClients();
-    }
-  }
+      data[len] = 0;
+      for (int i = 0; i < len; i++) {
+        Serial.printf("%c", data[i]);
+      }
+      Serial.println();
+      if (strncmp((char*) data, "brightness", 10) == 0)
+      {
+        uint8_t brightness = uint8_t (atoi(((char*) (data + 10))));
+        Serial.printf("Brightness - %d\n", brightness);
+        if (brightness >= 0 && brightness <= 255)
+          FastLED.setBrightness(brightness);
+          FastLED.show();
+      }
+      else if (strncmp((char*) data, "static_color", 12) == 0)
+      {
+        g_CurrentEffect = nullptr;
+        //FastLED.clear(true);
+        int color = strtol((char*) (data + 12), NULL, 16);
+        //int color = atoi((char*) (data + 12));            // 0x__ __ __
+        Serial.printf("color - %x\n", color);
+        uint8_t r = (color & (0x00FF0000)) >> 16;
+        uint8_t g = (color & (0x0000FF00)) >> 8;
+        uint8_t b = (color & (0x000000FF)) >> 0;
+        Serial.printf("r - %x, g - %x, b - %x\n", r, g, b);
+        fill_solid(g_Leds, NUM_LEDS, {r, g, b});
+        FastLED.show();
+      }
+      else if (strcmp((char*) data, "Z") == 0)
+      {
+        g_CurrentEffect = nullptr;
+        FastLED.clear(true);
+        g_NameOfCurrentEffect = "Turned Off";
+        esp_deep_sleep_start();
+      }
+      else
+      {
+      int temp = atoi((char*) data);
+      g_CurrentEffect = g_Effects[temp].effect;
+      g_NameOfCurrentEffect = g_Effects[temp].name;
+      notifyClients();
+     }
+   }
 }
 
 void onEvent(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,

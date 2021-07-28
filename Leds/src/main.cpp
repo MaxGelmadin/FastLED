@@ -9,9 +9,6 @@
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
-using namespace std;
-
-
 
 void task1code(void* params)
 {
@@ -31,7 +28,7 @@ void setup()
     pinMode(LED_PIN, OUTPUT);
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(g_Leds, NUM_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
-    FastLED.setMaxPowerInMilliWatts(900);
+    //FastLED.setMaxPowerInMilliWatts(900);
     xTaskCreatePinnedToCore(
       task1code, /* Function to implement the task */
       "Task1", /* Name of the task */
