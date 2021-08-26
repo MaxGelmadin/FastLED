@@ -9,5 +9,5 @@ Also you can send to chip to deep-sleep-mode if you want to turn it "off" and st
 
 <img width="1045" alt="Screenshot_1" src="https://user-images.githubusercontent.com/72410493/130970716-502336c5-2c26-43eb-8958-8e9507fdb511.png">
 
-I have no experience in UI/UX, thus the design of the site is nothing more that some buttons and event listeners.
+* I have no experience in UI design, thus the website is nothing more that some buttons and event listeners.
 
