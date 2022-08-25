@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #define FASTLED_INTERNAL
 #include <FastLED.h>
-#define NUM_LEDS 120
 
 extern CRGB g_Leds[];
 

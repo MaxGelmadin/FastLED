@@ -1,11 +1,10 @@
 #include <Arduino.h>
 #define FASTLED_INTERNAL
 #include <FastLED.h>
-#include "../include/WiFiHandler.h"
-
-#define LED_PIN 5
 #define NUM_LEDS 120
-#define BRIGHTNESS 100
+#include "../include/WiFiHandler.h"
+#define LED_PIN 5
+#define BRIGHTNESS 75
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
 
@@ -14,7 +13,7 @@ void task1code(void* params)
 {
   for (;;)
   {
-    Serial.println("Inside task1");
+    //Serial.println("Inside task1");
     ws1.cleanupClients();
     if (g_CurrentEffect)
         g_CurrentEffect->Draw();
@@ -40,6 +39,25 @@ void setup()
       2,  /* Priority of the task */
       &g_task1,  /* Task handle. */
       1); /* Core where the task should run */
+
+
+    // Just a fun way to indicate that the leds are ready to work after chip boot
+    fill_solid(g_Leds, NUM_LEDS, CRGB::Red);
+    FastLED.show();
+    delay(250);
+    FastLED.clear(true);
+    delay(250);
+
+    fill_solid(g_Leds, NUM_LEDS, CRGB::Green);
+    FastLED.show();
+    delay(250);
+    FastLED.clear(true);
+    delay(250);
+
+    fill_solid(g_Leds, NUM_LEDS, CRGB::Blue);
+    FastLED.show();
+    delay(250);
+    FastLED.clear(true);
 }
 
 void loop() {}

@@ -3,7 +3,6 @@
 #include <FastLED.h>
 #include <vector>
 #include <sys/time.h>
-#define NUM_LEDS 120
 
 extern CRGB g_Leds[];
 
